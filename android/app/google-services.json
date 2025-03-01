@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "869481983448",
+    "project_id": "gobuy-ecom",
+    "storage_bucket": "gobuy-ecom.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:869481983448:android:fec34de1615166a49e16ad",
+        "android_client_info": {
+          "package_name": "com.example.e_comm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMlFF3KxPw20MTOnciZHpCN56Z2ee_51w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
