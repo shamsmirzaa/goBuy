@@ -1,3 +1,5 @@
+import 'package:e_comm/controllers/google_sign_in_controller.dart';
+import 'package:e_comm/screens/auth_ui/sign_in_screen.dart';
 import 'package:e_comm/utils/app_constant.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -5,7 +7,11 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
 class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({super.key});
+  WelcomeScreen({super.key});
+
+  final GoogleSignInController _googleSignInController = Get.put(
+    GoogleSignInController(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +47,7 @@ class WelcomeScreen extends StatelessWidget {
                     TextSpan(
                       text: "GoBuy",
                       style: TextStyle(
-                        color: Colors.green, // Different color for "GoBuy"
+                        color: Colors.grey[700], // Different color for "GoBuy"
                         fontSize: 25,
                         fontWeight: FontWeight.bold,
                       ),
@@ -86,7 +92,9 @@ class WelcomeScreen extends StatelessWidget {
                     "Sign in with Google",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    _googleSignInController.signInWithGoogle();
+                  },
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     foregroundColor: Colors.black,
@@ -109,7 +117,9 @@ class WelcomeScreen extends StatelessWidget {
                     "Sign in with E-mail",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    Get.to(() => SignInScreen());
+                  },
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     foregroundColor: Colors.black,
