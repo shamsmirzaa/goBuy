@@ -2,11 +2,15 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dots_indicator/dots_indicator.dart';
+import 'package:e_comm/controllers/rating_controller.dart';
 import 'package:e_comm/models/cart_model.dart';
 import 'package:e_comm/models/product_model.dart';
+import 'package:e_comm/models/review_model.dart';
 import 'package:e_comm/utils/app_constant.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -28,6 +32,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    CalculateProductRatingController calculateProductRatingController = Get.put(
+      CalculateProductRatingController(widget.productModel.productId),
+    );
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppConstant.appSecondaryColor,
@@ -122,6 +129,41 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         ),
                       ),
                     ),
+                    //reviews
+                    Obx(
+                      () => Row(
+                        children: [
+                          RatingBar.builder(
+                            glow: false,
+                            ignoreGestures: true,
+                            initialRating:
+                                calculateProductRatingController
+                                    .averageRating
+                                    .value,
+                            minRating: 1,
+                            direction: Axis.horizontal,
+                            allowHalfRating: true,
+                            itemCount: 5,
+                            itemSize: 25,
+                            itemPadding: EdgeInsets.symmetric(horizontal: 2.0),
+                            itemBuilder:
+                                (context, _) =>
+                                    Icon(Icons.star, color: Colors.amber),
+                            onRatingUpdate: (value) {},
+                          ),
+                          SizedBox(width: 5),
+                          Text(
+                            calculateProductRatingController.averageRating.value
+                                .toStringAsFixed(1),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Container(
@@ -229,7 +271,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     ),
                                   ),
                                   onPressed: () {
-                                    // Get.to(() => SignInScreen());
+                                    sendMessageOnWhatsApp(
+                                      productModel: widget.productModel,
+                                    );
+                                    print("whatsapp sent");
                                   },
                                   style: TextButton.styleFrom(
                                     padding: EdgeInsets.symmetric(vertical: 12),
@@ -288,10 +333,207 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
               ),
             ),
+            //reviews
+            FutureBuilder(
+              future:
+                  FirebaseFirestore.instance
+                      .collection('products')
+                      .doc(widget.productModel.productId)
+                      .collection('reviews')
+                      .get(),
+              builder: (
+                BuildContext context,
+                AsyncSnapshot<QuerySnapshot> snapshot,
+              ) {
+                if (snapshot.hasError) {
+                  return Center(child: Text("Error"));
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Container(
+                    height: Get.height / 5,
+                    child: Center(child: CupertinoActivityIndicator()),
+                  );
+                }
+
+                if (snapshot.data!.docs.isEmpty) {
+                  return Center(child: Text("No reviews found!"));
+                }
+
+                if (snapshot.data != null) {
+                  return ListView.builder(
+                    physics: BouncingScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      var data = snapshot.data!.docs[index];
+                      ReviewModel reviewModel = ReviewModel(
+                        customerName: data['customerName'],
+                        customerPhone: data['customerPhone'],
+                        customerDeviceToken: data['customerDeviceToken'],
+                        customerId: data['customerId'],
+                        feedback: data['feedback'],
+                        rating: data['rating'],
+                        createdAt: data['createdAt'],
+                      );
+                      return Card(
+                        margin: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Customer Avatar
+                              CircleAvatar(
+                                radius: 25,
+                                backgroundColor: Colors.blueAccent.withOpacity(
+                                  0.2,
+                                ),
+                                child: Text(
+                                  reviewModel.customerName[0].toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blueAccent,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+
+                              // Review Content
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Customer Name
+                                    Text(
+                                      reviewModel.customerName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+
+                                    // Rating Display
+                                    Row(
+                                      children: [
+                                        Row(
+                                          children: List.generate(5, (index) {
+                                            double ratingValue = double.parse(
+                                              reviewModel.rating,
+                                            );
+
+                                            if (index < ratingValue.floor()) {
+                                              // Full Star
+                                              return Icon(
+                                                Icons.star,
+                                                color: Colors.amber,
+                                                size: 18,
+                                              );
+                                            } else if (index < ratingValue) {
+                                              // Half-Star with Gray Background
+                                              return Stack(
+                                                children: [
+                                                  Icon(
+                                                    Icons.star,
+                                                    // Gray full star in the background
+                                                    color: Colors.grey.shade400,
+
+                                                    size: 18,
+                                                  ),
+                                                  Icon(
+                                                    Icons.star_half,
+                                                    // Half amber star overlay
+                                                    color: Colors.amber,
+                                                    size: 18,
+                                                  ),
+                                                ],
+                                              );
+                                            } else {
+                                              // Empty Star
+                                              return Icon(
+                                                Icons.star,
+                                                color: Colors.grey.shade400,
+                                                size: 18,
+                                              );
+                                            }
+                                          }),
+                                        ),
+
+                                        SizedBox(width: 6),
+                                        Text(
+                                          reviewModel.rating.toString(),
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 6),
+
+                                    // Feedback Text
+                                    Text(
+                                      reviewModel.feedback,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black54,
+                                      ),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+
+                return Container();
+              },
+            ),
           ],
         ),
       ),
     );
+  }
+
+  static Future<void> sendMessageOnWhatsApp({
+    required ProductModel productModel,
+  }) async {
+    final number = "+919353847695";
+    final message =
+        "Hello goBuy \n I want to know about this product\n ${productModel.productName}\n${productModel.productId}";
+
+    final Uri uri = Uri.parse(
+      'https://wa.me/$number?text=${Uri.encodeComponent(message)}',
+    );
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      print('Could not launch $uri');
+      Get.snackbar(
+        "Error",
+        "Could not open WhatsApp. Please check if it's installed.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 
   //check product exist or not

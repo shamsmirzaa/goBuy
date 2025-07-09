@@ -1,5 +1,6 @@
 import 'package:e_comm/controllers/sign_up_controller.dart';
 import 'package:e_comm/screens/auth_ui/sign_in_screen.dart';
+import 'package:e_comm/services/notification_service.dart';
 import 'package:e_comm/utils/app_constant.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -149,12 +150,15 @@ class _SignInScreenState extends State<SignUpScreen> {
                         ),
                       ),
                       onPressed: () async {
+                        NotificationService notificationService =
+                            NotificationService();
                         String name = username.text.trim();
                         String email = userEmail.text.trim();
                         String phone = userPhone.text.trim();
                         String city = userCity.text.trim();
                         String password = userPassword.text.trim();
-                        String userDeviceToken = '';
+                        String userDeviceToken =
+                            await notificationService.getDeviceToken();
 
                         if (name.isEmpty ||
                             email.isEmpty ||

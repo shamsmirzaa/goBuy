@@ -8,7 +8,7 @@ class OrderModel {
   final String salePrice;
   final String fullPrice;
   final List productImages;
-  final String deliveryTime;
+  final dynamic deliveryTime;
   final bool isSale;
   final String productDescription;
   final dynamic createdAt;

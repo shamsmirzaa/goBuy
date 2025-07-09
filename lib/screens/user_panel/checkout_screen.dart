@@ -1,16 +1,15 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:e_comm/controllers/cart_price_controller.dart';
+import 'package:e_comm/controllers/get_customer_device_token_controller.dart';
 import 'package:e_comm/models/cart_model.dart';
-import 'package:e_comm/models/product_model.dart';
+import 'package:e_comm/services/get_server_key.dart';
+import 'package:e_comm/services/place_order_screen.dart';
 import 'package:e_comm/utils/app_constant.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_swipe_action_cell/core/cell.dart';
 import 'package:get/get.dart';
-
-import 'product_details_screen.dart';
 
 class CheckOutScreen extends StatefulWidget {
   const CheckOutScreen({super.key});
@@ -24,6 +23,10 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
   final ProductPriceController productPriceController = Get.put(
     ProductPriceController(),
   );
+
+  TextEditingController nameController = TextEditingController();
+  TextEditingController phoneController = TextEditingController();
+  TextEditingController addressController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -239,8 +242,11 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
               ],
             ),
             ElevatedButton(
-              onPressed: () {
-                showCustomBottomSheet();
+              onPressed: () async {
+                // showCustomBottomSheet();
+                GetServerKey getServerKey = GetServerKey();
+                String accessToken = await getServerKey.getServerKeyToken();
+                print(accessToken);
               },
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 14),
@@ -272,118 +278,160 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
       ),
     );
   }
-}
 
-void showCustomBottomSheet() {
-  Get.bottomSheet(
-    Container(
-      height: Get.height * 0.95,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Drag Indicator
-              Container(
-                width: 50,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              SizedBox(height: 15),
-
-              // Title
-              Text(
-                "Complete Your Order",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              SizedBox(height: 20),
-
-              // Input Fields
-              _buildTextField(label: "Name", icon: Icons.person),
-              SizedBox(height: 15),
-              _buildTextField(label: "Phone", icon: Icons.phone, isPhone: true),
-              SizedBox(height: 15),
-              _buildTextField(label: "Address", icon: Icons.location_on),
-
-              SizedBox(height: 25),
-
-              // Place Order Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    backgroundColor: Colors.blueAccent,
-                    elevation: 3,
-                  ),
-                  onPressed: () {
-                    // Handle order placement
-                  },
-                  child: Text(
-                    "Place Order",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+  void showCustomBottomSheet() {
+    Get.bottomSheet(
+      Container(
+        height: Get.height * 0.95,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag Indicator
+                Container(
+                  width: 50,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-              ),
+                SizedBox(height: 15),
 
-              SizedBox(height: 15),
-            ],
+                // Title
+                Text(
+                  "Complete Your Order",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // Input Fields
+                _buildTextField(
+                  label: "Name",
+                  icon: Icons.person,
+                  controller: nameController,
+                ),
+                SizedBox(height: 15),
+                _buildTextField(
+                  label: "Phone",
+                  icon: Icons.phone,
+                  isPhone: true,
+                  controller: phoneController,
+                ),
+                SizedBox(height: 15),
+                _buildTextField(
+                  label: "Address",
+                  icon: Icons.location_on,
+                  controller: addressController,
+                ),
+
+                SizedBox(height: 25),
+
+                // Place Order Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: Colors.blueAccent,
+                      elevation: 3,
+                    ),
+                    onPressed: () async {
+                      if (nameController.text.trim().isEmpty ||
+                          phoneController.text.trim().isEmpty ||
+                          addressController.text.trim().isEmpty) {
+                        // If any field is empty, show the snackbar
+                        Get.snackbar(
+                          "Incomplete Details",
+                          "Please fill all the details before placing an order.",
+                          snackPosition: SnackPosition.TOP,
+                          backgroundColor: Colors.redAccent,
+                          colorText: Colors.white,
+                        );
+                      } else {
+                        // All fields are filled, proceed with placing the order
+                        String name = nameController.text.trim();
+                        String phone = phoneController.text.trim();
+                        String address = addressController.text.trim();
+
+                        String customerToken = await getCustomerDeviceToken();
+
+                        placeOrder(
+                          context: context,
+                          customerName: name,
+                          customerPhone: phone,
+                          customerAddress: address,
+                          customerDeviceToken: customerToken,
+                        );
+                      }
+                    },
+
+                    child: Text(
+                      "Place Order",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 15),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-    backgroundColor: Colors.transparent,
-    isDismissible: true,
-    enableDrag: true,
-    elevation: 6,
-  );
-}
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      elevation: 6,
+    );
+  }
 
-// Reusable TextField Widget for Cleaner Code
-Widget _buildTextField({
-  required String label,
-  required IconData icon,
-  bool isPhone = false,
-}) {
-  return TextFormField(
-    keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
-    decoration: InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: Colors.blueAccent),
-      filled: true,
-      fillColor: Colors.grey[100],
-      contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+  // Reusable TextField Widget for Cleaner Code
+  Widget _buildTextField({
+    required String label,
+    required IconData icon,
+    required TextEditingController controller,
+    bool isPhone = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.blueAccent),
+        filled: true,
+        fillColor: Colors.grey[100],
+        contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

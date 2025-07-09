@@ -12,6 +12,7 @@ class ProductPriceController extends GetxController {
   void onInit() {
     fetchProductPrice();
     super.onInit();
+
   }
 
   void fetchProductPrice() async {
